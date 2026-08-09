@@ -1,0 +1,152 @@
+// Prisma schema for the "landingrp" lead-qualification + booking funnel
+// Provider: PostgreSQL (works out of the box with Vercel Postgres / Neon / Supabase)
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Auth
+// ---------------------------------------------------------------------------
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// Site configuration (single row) — landing texts, video, countdown, etc.
+// Stored as JSON so the admin panel can evolve the shape without migrations.
+// ---------------------------------------------------------------------------
+
+model SiteConfig {
+  id        String   @id @default("main")
+  data      Json
+  updatedAt DateTime @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// Quiz (pre-landing qualification questions)
+// ---------------------------------------------------------------------------
+
+enum QuestionType {
+  SINGLE
+  MULTI
+  TEXT
+}
+
+model QuizQuestion {
+  id        String       @id @default(cuid())
+  order     Int          @default(0)
+  question  String
+  helpText  String?
+  type      QuestionType @default(SINGLE)
+  options   Json? // string[] of option labels, each may carry a score
+  required  Boolean      @default(true)
+  active    Boolean      @default(true)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  answers   QuizAnswer[]
+
+  @@index([order])
+}
+
+model QuizAnswer {
+  id         String       @id @default(cuid())
+  leadId     String
+  lead       Lead         @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  questionId String
+  question   QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answer     Json // string or string[]
+  createdAt  DateTime     @default(now())
+
+  @@index([leadId])
+  @@index([questionId])
+}
+
+// ---------------------------------------------------------------------------
+// Leads (the "client file" built from the quiz + contact form)
+// ---------------------------------------------------------------------------
+
+model Lead {
+  id                 String    @id @default(cuid())
+  fullName           String
+  email              String
+  emailVerified      Boolean   @default(false)
+  verifyToken        String?   @unique
+  verifyTokenExpires DateTime?
+  phoneDialCode      String
+  phoneCountryIso    String?
+  phoneNumber        String
+  city               String
+  country            String
+  score              Int       @default(0)
+
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  utmContent  String?
+  utmTerm     String?
+  utmId       String?
+  referrer    String?
+  landingPath String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  answers  QuizAnswer[]
+  bookings Booking[]
+
+  @@index([email])
+  @@index([createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Availability (admin configurable) + Bookings
+// ---------------------------------------------------------------------------
+
+model AvailabilityRule {
+  id          String   @id @default(cuid())
+  dayOfWeek   Int // 0 = Sunday ... 6 = Saturday
+  startTime   String // "09:00"
+  endTime     String // "18:00"
+  slotMinutes Int      @default(30)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model BlockedDate {
+  id     String  @id @default(cuid())
+  date   String // "2026-08-20" — blocks the whole day
+  reason String?
+
+  @@unique([date])
+}
+
+model Booking {
+  id        String   @id @default(cuid())
+  leadId    String
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  date      String // "2026-08-20"
+  startTime String // "10:00"
+  endTime   String // "10:30"
+  timezone  String   @default("America/Lima")
+  status    String   @default("confirmed") // confirmed | cancelled
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([date, startTime])
+  @@index([leadId])
+}

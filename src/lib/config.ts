@@ -38,8 +38,16 @@ function deepMerge<T>(target: T, source: Record<string, unknown>): T {
 }
 
 export async function getSiteConfig(): Promise<SiteConfigData> {
-  const row = await prisma.siteConfig.findUnique({ where: { id: "main" } });
-  return mergeConfig(row?.data);
+  try {
+    const row = await prisma.siteConfig.findUnique({ where: { id: "main" } });
+    return mergeConfig(row?.data);
+  } catch (error) {
+    // Falls back to defaults when the DB isn't reachable yet (e.g. during a
+    // build/static-generation pass before DATABASE_URL is configured) so the
+    // app can still build and render instead of hard-failing.
+    console.error("No se pudo leer la configuración del sitio:", error);
+    return structuredClone(defaultSiteConfig);
+  }
 }
 
 export async function saveSiteConfig(data: SiteConfigData) {

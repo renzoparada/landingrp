@@ -21,10 +21,19 @@ export default async function HomePage({
   const referrer = h.get("referer") ?? undefined;
 
   const [questionRows, config] = await Promise.all([
-    prisma.quizQuestion.findMany({
-      where: { active: true },
-      orderBy: { order: "asc" },
-    }),
+    prisma.quizQuestion
+      .findMany({
+        where: { active: true },
+        orderBy: { order: "asc" },
+      })
+      .catch((error) => {
+        // Falls back to an empty list when the DB isn't reachable yet (e.g.
+        // during a build/static-generation pass before DATABASE_URL is
+        // configured) so the app can still build and render instead of
+        // hard-failing, mirroring getSiteConfig()'s fallback below.
+        console.error("No se pudieron cargar las preguntas del quiz:", error);
+        return [];
+      }),
     getSiteConfig(),
   ]);
 

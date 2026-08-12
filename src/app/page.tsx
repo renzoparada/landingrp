@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
-import { prisma } from "@/lib/prisma";
 import { getSiteConfig } from "@/lib/config";
+import { getQuizQuestionsForCampaignSlug } from "@/lib/quiz";
 import QuizWizard, { type WizardQuestion } from "@/components/QuizWizard";
 
 export const dynamic = "force-dynamic";
@@ -19,21 +19,17 @@ export default async function HomePage({
   const sp = await searchParams;
   const h = await headers();
   const referrer = h.get("referer") ?? undefined;
+  const utmCampaign = pick(sp.utm_campaign);
 
   const [questionRows, config] = await Promise.all([
-    prisma.quizQuestion
-      .findMany({
-        where: { active: true },
-        orderBy: { order: "asc" },
-      })
-      .catch((error) => {
-        // Falls back to an empty list when the DB isn't reachable yet (e.g.
-        // during a build/static-generation pass before DATABASE_URL is
-        // configured) so the app can still build and render instead of
-        // hard-failing, mirroring getSiteConfig()'s fallback below.
-        console.error("No se pudieron cargar las preguntas del quiz:", error);
-        return [];
-      }),
+    getQuizQuestionsForCampaignSlug(utmCampaign).catch((error) => {
+      // Falls back to an empty list when the DB isn't reachable yet (e.g.
+      // during a build/static-generation pass before DATABASE_URL is
+      // configured) so the app can still build and render instead of
+      // hard-failing, mirroring getSiteConfig()'s fallback below.
+      console.error("No se pudieron cargar las preguntas del quiz:", error);
+      return [];
+    }),
     getSiteConfig(),
   ]);
 
@@ -53,7 +49,7 @@ export default async function HomePage({
       utm={{
         utmSource: pick(sp.utm_source),
         utmMedium: pick(sp.utm_medium),
-        utmCampaign: pick(sp.utm_campaign),
+        utmCampaign,
         utmContent: pick(sp.utm_content),
         utmTerm: pick(sp.utm_term),
         utmId: pick(sp.utm_id),

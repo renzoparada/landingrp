@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminQuestionsPage() {
   const questions = await prisma.quizQuestion.findMany({
+    where: { campaignId: null },
     orderBy: { order: "asc" },
   });
 
@@ -23,10 +24,14 @@ export default async function AdminQuestionsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-2">Preguntas del quiz</h1>
+      <h1 className="text-2xl font-bold mb-2">Preguntas del quiz (por defecto)</h1>
       <p className="text-sm text-white/50 mb-6">
         Estas preguntas se muestran antes de la landing para ir perfilando al
-        cliente. El puntaje de cada opción se suma al perfil del lead.
+        cliente. El puntaje de cada opción se suma al perfil del lead. Son
+        las que se usan cuando el link no pertenece a ninguna campaña, o
+        cuando una campaña no tiene sus propias preguntas — cada campaña
+        puede tener las suyas desde{" "}
+        <span className="text-white/70">Campañas → editar campaña</span>.
       </p>
       <QuestionsManager initialQuestions={rows} />
     </div>

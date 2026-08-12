@@ -35,6 +35,7 @@ export async function upsertQuestion(
           options: data.options ?? undefined,
           required: data.required,
           active: data.active,
+          campaignId: data.campaignId || null,
         },
       });
     } else {
@@ -47,6 +48,7 @@ export async function upsertQuestion(
           options: data.options ?? undefined,
           required: data.required,
           active: data.active,
+          campaignId: data.campaignId || null,
         },
       });
     }
@@ -56,10 +58,15 @@ export async function upsertQuestion(
   }
 
   revalidatePath("/admin/preguntas");
+  revalidatePath("/");
+  if (data.campaignId) revalidatePath(`/admin/campanas/${data.campaignId}`);
   return { ok: true };
 }
 
-export async function deleteQuestion(id: string): Promise<ActionResult> {
+export async function deleteQuestion(
+  id: string,
+  campaignId?: string | null
+): Promise<ActionResult> {
   try {
     await requireAdminSession();
   } catch {
@@ -68,11 +75,14 @@ export async function deleteQuestion(id: string): Promise<ActionResult> {
 
   await prisma.quizQuestion.delete({ where: { id } });
   revalidatePath("/admin/preguntas");
+  revalidatePath("/");
+  if (campaignId) revalidatePath(`/admin/campanas/${campaignId}`);
   return { ok: true };
 }
 
 export async function reorderQuestions(
-  orderedIds: string[]
+  orderedIds: string[],
+  campaignId?: string | null
 ): Promise<ActionResult> {
   try {
     await requireAdminSession();
@@ -86,5 +96,7 @@ export async function reorderQuestions(
     )
   );
   revalidatePath("/admin/preguntas");
+  revalidatePath("/");
+  if (campaignId) revalidatePath(`/admin/campanas/${campaignId}`);
   return { ok: true };
 }

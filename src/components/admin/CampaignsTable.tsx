@@ -43,7 +43,7 @@ export default function CampaignsTable({ campaigns }: { campaigns: CampaignRow[]
   async function handleDelete(row: CampaignRow) {
     if (
       !confirm(
-        `¿Eliminar la campaña "${row.name}"? Los leads que llegaron por este link se conservan, solo se borra la campaña.`
+        `¿Eliminar la campaña "${row.name}"? Los leads que llegaron por este link se conservan, pero se borran las preguntas propias de esta campaña (si tenía) junto con sus respuestas.`
       )
     )
       return;

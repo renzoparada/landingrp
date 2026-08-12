@@ -194,8 +194,11 @@ function QuestionForm({
 
 export default function QuestionsManager({
   initialQuestions,
+  campaignId = null,
 }: {
   initialQuestions: QuestionRow[];
+  /** null = the shared default quiz. Set = this campaign's own quiz. */
+  campaignId?: string | null;
 }) {
   const [questions, setQuestions] = useState(
     [...initialQuestions].sort((a, b) => a.order - b.order)
@@ -224,6 +227,7 @@ export default function QuestionsManager({
           : draft.options.filter((o) => o.label.trim()),
       required: draft.required,
       active: draft.active,
+      campaignId,
     });
     setSaving(false);
     if (!result.ok) {
@@ -237,7 +241,7 @@ export default function QuestionsManager({
 
   async function remove(id: string) {
     if (!confirm("¿Eliminar esta pregunta? Se perderán las respuestas asociadas.")) return;
-    await deleteQuestion(id);
+    await deleteQuestion(id, campaignId);
     setQuestions((qs) => qs.filter((q) => q.id !== id));
   }
 
@@ -248,7 +252,7 @@ export default function QuestionsManager({
     const next = [...questions];
     [next[idx], next[swapWith]] = [next[swapWith], next[idx]];
     setQuestions(next);
-    await reorderQuestions(next.map((q) => q.id));
+    await reorderQuestions(next.map((q) => q.id), campaignId);
   }
 
   return (

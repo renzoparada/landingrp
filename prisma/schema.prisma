@@ -51,6 +51,10 @@ model Campaign {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Optional per-campaign quiz — when empty, the campaign's landing falls
+  // back to the shared default questions (QuizQuestion.campaignId = null).
+  questions QuizQuestion[]
+
   @@index([slug])
 }
 
@@ -77,7 +81,14 @@ model QuizQuestion {
   updatedAt DateTime     @updatedAt
   answers   QuizAnswer[]
 
+  // null = shared default quiz shown when no campaign (or a campaign with
+  // no questions of its own) applies. Set = belongs only to that campaign,
+  // with its own questions/options/scores.
+  campaignId String?
+  campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
   @@index([order])
+  @@index([campaignId])
 }
 
 model QuizAnswer {

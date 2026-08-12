@@ -49,6 +49,8 @@ export const questionUpsertSchema = z.object({
   options: z.array(questionOptionSchema).optional(),
   required: z.boolean().default(true),
   active: z.boolean().default(true),
+  // null/omitted = shared default quiz. Set = belongs only to that campaign.
+  campaignId: z.string().optional().nullable(),
 });
 
 export const availabilityRuleSchema = z.object({

@@ -36,6 +36,25 @@ model SiteConfig {
 }
 
 // ---------------------------------------------------------------------------
+// Campaigns — each one overrides the hero + offer shown on /oferta so the
+// admin can run several simultaneous ad campaigns (e.g. "ventas", "coaching",
+// "talleres") with different pitches, all measured separately via the
+// matching ?utm_campaign=<slug> link.
+// ---------------------------------------------------------------------------
+
+model Campaign {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  active    Boolean  @default(true)
+  data      Json // { hero: {...}, offer: {...} } — see CampaignContentData
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([slug])
+}
+
+// ---------------------------------------------------------------------------
 // Quiz (pre-landing qualification questions)
 // ---------------------------------------------------------------------------
 

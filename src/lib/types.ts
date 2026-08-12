@@ -74,6 +74,14 @@ export interface SiteConfigData {
   };
 }
 
+// Per-campaign overrides for the /oferta page — a subset of SiteConfigData
+// (just hero + offer, the parts that differ between pitches like "ventas",
+// "coaching", "talleres") keyed by a Campaign's slug via ?utm_campaign=<slug>.
+export interface CampaignContentData {
+  hero: SiteConfigData["hero"];
+  offer: SiteConfigData["offer"];
+}
+
 export const defaultSiteConfig: SiteConfigData = {
   brand: {
     name: "Global Talent",

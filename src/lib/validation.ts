@@ -65,6 +65,46 @@ export const blockedDateSchema = z.object({
   reason: z.string().optional().nullable(),
 });
 
+export const campaignHeroSchema = z.object({
+  badge: z.string().default(""),
+  title: z.string().min(1, "Ingresa un título"),
+  highlight: z.string().default(""),
+  subtitle: z.string().default(""),
+  ctaLabel: z.string().min(1, "Ingresa el texto del botón"),
+  videoSource: z.enum(["youtube", "vimeo", "mp4", "none"]),
+  videoUrl: z.string().default(""),
+});
+
+export const campaignOfferSchema = z.object({
+  enabled: z.boolean().default(true),
+  title: z.string().default(""),
+  description: z.string().default(""),
+  expiresAt: z.string().min(1),
+  expiredMessage: z.string().default(""),
+  priceOriginal: z.string().optional(),
+  priceOffer: z.string().optional(),
+});
+
+export const campaignSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().trim().min(2, "Ingresa un nombre para la campaña"),
+  slug: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .min(2, "El link debe tener al menos 2 caracteres")
+    .max(60, "Máximo 60 caracteres")
+    .regex(
+      /^[a-z0-9]+(-[a-z0-9]+)*$/,
+      "Solo minúsculas, números y guiones (sin espacios ni tildes)"
+    ),
+  active: z.boolean().default(true),
+  hero: campaignHeroSchema,
+  offer: campaignOfferSchema,
+});
+
+export type CampaignInput = z.infer<typeof campaignSchema>;
+
 export const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),

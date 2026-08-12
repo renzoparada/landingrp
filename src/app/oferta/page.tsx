@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getLeadSession } from "@/lib/lead-session";
 import { prisma } from "@/lib/prisma";
 import { getSiteConfig } from "@/lib/config";
+import type { CampaignContentData } from "@/lib/types";
 import CountdownTimer from "@/components/CountdownTimer";
 import VideoEmbed from "@/components/VideoEmbed";
 import StarRating from "@/components/StarRating";
@@ -14,12 +15,28 @@ export default async function OfertaPage() {
   const session = await getLeadSession();
   if (!session) redirect("/");
 
-  const [lead, config] = await Promise.all([
+  const [lead, baseConfig] = await Promise.all([
     prisma.lead.findUnique({ where: { id: session.leadId } }),
     getSiteConfig(),
   ]);
 
   if (!lead) redirect("/");
+
+  // If this lead arrived via a ?utm_campaign=<slug> link tied to an active
+  // Campaign, show that campaign's hero + offer instead of the site-wide
+  // default — that's what lets "ventas", "coaching", "talleres", etc. run
+  // as simultaneous campaigns with different pitches.
+  const campaign = lead.utmCampaign
+    ? await prisma.campaign.findUnique({ where: { slug: lead.utmCampaign } })
+    : null;
+
+  const config =
+    campaign && campaign.active
+      ? {
+          ...baseConfig,
+          ...(campaign.data as unknown as CampaignContentData),
+        }
+      : baseConfig;
 
   const brandVars = {
     ["--brand-primary" as string]: config.brand.primaryColor,

@@ -7,6 +7,7 @@ const NAV = [
   { href: "/admin", label: "Resumen", icon: "📊" },
   { href: "/admin/leads", label: "Leads", icon: "🗂️" },
   { href: "/admin/reservas", label: "Reservas", icon: "📅" },
+  { href: "/admin/campanas", label: "Campañas", icon: "🚀" },
   { href: "/admin/preguntas", label: "Preguntas del quiz", icon: "❓" },
   { href: "/admin/disponibilidad", label: "Disponibilidad", icon: "🕒" },
   { href: "/admin/contenido", label: "Contenido de la landing", icon: "🎨" },

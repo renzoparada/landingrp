@@ -22,32 +22,44 @@ interface CampaignStat {
 }
 
 export default async function AdminDashboardPage() {
-  const [totalLeads, verifiedLeads, totalBookings, upcomingBookings, recentLeads, campaignLeads] =
-    await Promise.all([
-      prisma.lead.count(),
-      prisma.lead.count({ where: { emailVerified: true } }),
-      prisma.booking.count({ where: { status: { not: "cancelled" } } }),
-      prisma.booking.count({
-        where: {
-          status: { not: "cancelled" },
-          date: { gte: new Date().toISOString().slice(0, 10) },
-        },
-      }),
-      prisma.lead.findMany({
-        orderBy: { createdAt: "desc" },
-        take: 8,
-      }),
-      prisma.lead.findMany({
-        select: {
-          utmCampaign: true,
-          utmSource: true,
-          emailVerified: true,
-          bookings: { where: { status: { not: "cancelled" } }, select: { id: true } },
-        },
-      }),
-    ]);
+  const [
+    totalLeads,
+    verifiedLeads,
+    totalBookings,
+    upcomingBookings,
+    recentLeads,
+    campaignLeads,
+    campaigns,
+  ] = await Promise.all([
+    prisma.lead.count(),
+    prisma.lead.count({ where: { emailVerified: true } }),
+    prisma.booking.count({ where: { status: { not: "cancelled" } } }),
+    prisma.booking.count({
+      where: {
+        status: { not: "cancelled" },
+        date: { gte: new Date().toISOString().slice(0, 10) },
+      },
+    }),
+    prisma.lead.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 8,
+    }),
+    prisma.lead.findMany({
+      select: {
+        utmCampaign: true,
+        utmSource: true,
+        emailVerified: true,
+        bookings: { where: { status: { not: "cancelled" } }, select: { id: true } },
+      },
+    }),
+    prisma.campaign.findMany({ select: { slug: true, name: true } }),
+  ]);
 
   const verifiedRate = totalLeads > 0 ? Math.round((verifiedLeads / totalLeads) * 100) : 0;
+
+  // Leads store the raw ?utm_campaign=<slug>; resolve it to the campaign's
+  // display name so the table shows "Ventas" instead of just "ventas".
+  const campaignNameBySlug = new Map(campaigns.map((c) => [c.slug, c.name]));
 
   // Agrupa los leads por campaña (utm_campaign) para medir el rendimiento
   // de cada anuncio/link que se está corriendo en simultáneo.
@@ -132,6 +144,7 @@ export default async function AdminDashboardPage() {
               <th className="px-4 py-3 font-medium">Nombre</th>
               <th className="px-4 py-3 font-medium">Email</th>
               <th className="px-4 py-3 font-medium">País</th>
+              <th className="px-4 py-3 font-medium">Campaña</th>
               <th className="px-4 py-3 font-medium">Puntaje</th>
               <th className="px-4 py-3 font-medium">Fecha</th>
             </tr>
@@ -149,6 +162,15 @@ export default async function AdminDashboardPage() {
                   )}
                 </td>
                 <td className="px-4 py-3 text-white/60">{lead.country}</td>
+                <td className="px-4 py-3 text-xs">
+                  {lead.utmCampaign ? (
+                    <span className="rounded-full bg-sky-500/15 text-sky-300 px-2.5 py-1 font-medium">
+                      {campaignNameBySlug.get(lead.utmCampaign) ?? lead.utmCampaign}
+                    </span>
+                  ) : (
+                    <span className="text-white/30">—</span>
+                  )}
+                </td>
                 <td className="px-4 py-3 text-white/60">{lead.score}</td>
                 <td className="px-4 py-3 text-white/40">
                   {formatDateTime(lead.createdAt)}
@@ -157,7 +179,7 @@ export default async function AdminDashboardPage() {
             ))}
             {recentLeads.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-white/40">
+                <td colSpan={6} className="px-4 py-6 text-center text-white/40">
                   Aún no hay leads registrados.
                 </td>
               </tr>

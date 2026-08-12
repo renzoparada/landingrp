@@ -15,6 +15,7 @@ export interface LeadRow {
   score: number;
   utmSource: string | null;
   utmCampaign: string | null;
+  campaignName: string | null;
   createdAt: string;
   answers: { question: string; answer: string }[];
   booking: { date: string; startTime: string } | null;
@@ -52,6 +53,7 @@ export default function LeadsTable({ leads }: { leads: LeadRow[] }) {
               <th className="px-4 py-3 font-medium">Lead</th>
               <th className="px-4 py-3 font-medium">Contacto</th>
               <th className="px-4 py-3 font-medium">Ubicación</th>
+              <th className="px-4 py-3 font-medium">Campaña</th>
               <th className="px-4 py-3 font-medium">Origen</th>
               <th className="px-4 py-3 font-medium">Cita</th>
               <th className="px-4 py-3 font-medium">Puntaje</th>
@@ -88,9 +90,17 @@ export default function LeadsTable({ leads }: { leads: LeadRow[] }) {
                   <td className="px-4 py-3 text-white/60">
                     {lead.city}, {lead.country}
                   </td>
+                  <td className="px-4 py-3 text-xs">
+                    {lead.campaignName ? (
+                      <span className="rounded-full bg-sky-500/15 text-sky-300 px-2.5 py-1 font-medium">
+                        {lead.campaignName}
+                      </span>
+                    ) : (
+                      <span className="text-white/30">—</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-white/60 text-xs">
                     {lead.utmSource || "—"}
-                    {lead.utmCampaign ? ` / ${lead.utmCampaign}` : ""}
                   </td>
                   <td className="px-4 py-3 text-white/60 text-xs">
                     {lead.booking
@@ -105,7 +115,7 @@ export default function LeadsTable({ leads }: { leads: LeadRow[] }) {
                 </tr>
                 {expanded === lead.id && (
                   <tr className="border-t border-white/5 bg-white/[0.02]">
-                    <td colSpan={6} className="px-4 py-4">
+                    <td colSpan={7} className="px-4 py-4">
                       {lead.answers.length === 0 ? (
                         <p className="text-white/40 text-xs">
                           Sin respuestas del quiz.
@@ -127,7 +137,7 @@ export default function LeadsTable({ leads }: { leads: LeadRow[] }) {
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-white/40">
+                <td colSpan={7} className="px-4 py-8 text-center text-white/40">
                   No se encontraron leads.
                 </td>
               </tr>

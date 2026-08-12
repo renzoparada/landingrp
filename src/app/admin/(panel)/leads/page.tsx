@@ -5,13 +5,20 @@ import ExportCsvButton from "@/components/admin/ExportCsvButton";
 export const dynamic = "force-dynamic";
 
 export default async function AdminLeadsPage() {
-  const leads = await prisma.lead.findMany({
-    orderBy: { createdAt: "desc" },
-    include: {
-      answers: { include: { question: true } },
-      bookings: { where: { status: { not: "cancelled" } }, take: 1 },
-    },
-  });
+  const [leads, campaigns] = await Promise.all([
+    prisma.lead.findMany({
+      orderBy: { createdAt: "desc" },
+      include: {
+        answers: { include: { question: true } },
+        bookings: { where: { status: { not: "cancelled" } }, take: 1 },
+      },
+    }),
+    prisma.campaign.findMany({ select: { slug: true, name: true } }),
+  ]);
+
+  // Leads store the raw ?utm_campaign=<slug>; resolve it to the campaign's
+  // display name so the table shows "Ventas" instead of just "ventas".
+  const campaignNameBySlug = new Map(campaigns.map((c) => [c.slug, c.name]));
 
   const rows: LeadRow[] = leads.map((lead) => ({
     id: lead.id,
@@ -25,6 +32,9 @@ export default async function AdminLeadsPage() {
     score: lead.score,
     utmSource: lead.utmSource,
     utmCampaign: lead.utmCampaign,
+    campaignName: lead.utmCampaign
+      ? campaignNameBySlug.get(lead.utmCampaign) ?? lead.utmCampaign
+      : null,
     createdAt: lead.createdAt.toISOString(),
     answers: lead.answers.map((a) => ({
       question: a.question.question,

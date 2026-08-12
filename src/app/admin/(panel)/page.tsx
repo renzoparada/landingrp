@@ -13,8 +13,16 @@ function StatCard({ label, value, hint }: { label: string; value: string; hint?:
   );
 }
 
+interface CampaignStat {
+  campaign: string;
+  source: string;
+  leads: number;
+  verified: number;
+  bookings: number;
+}
+
 export default async function AdminDashboardPage() {
-  const [totalLeads, verifiedLeads, totalBookings, upcomingBookings, recentLeads] =
+  const [totalLeads, verifiedLeads, totalBookings, upcomingBookings, recentLeads, campaignLeads] =
     await Promise.all([
       prisma.lead.count(),
       prisma.lead.count({ where: { emailVerified: true } }),
@@ -29,9 +37,36 @@ export default async function AdminDashboardPage() {
         orderBy: { createdAt: "desc" },
         take: 8,
       }),
+      prisma.lead.findMany({
+        select: {
+          utmCampaign: true,
+          utmSource: true,
+          emailVerified: true,
+          bookings: { where: { status: { not: "cancelled" } }, select: { id: true } },
+        },
+      }),
     ]);
 
   const verifiedRate = totalLeads > 0 ? Math.round((verifiedLeads / totalLeads) * 100) : 0;
+
+  // Agrupa los leads por campaña (utm_campaign) para medir el rendimiento
+  // de cada anuncio/link que se está corriendo en simultáneo.
+  const campaignMap = new Map<string, CampaignStat>();
+  for (const lead of campaignLeads) {
+    const key = lead.utmCampaign || "Sin campaña";
+    const existing = campaignMap.get(key) ?? {
+      campaign: key,
+      source: lead.utmSource || "—",
+      leads: 0,
+      verified: 0,
+      bookings: 0,
+    };
+    existing.leads += 1;
+    if (lead.emailVerified) existing.verified += 1;
+    if (lead.bookings.length > 0) existing.bookings += 1;
+    campaignMap.set(key, existing);
+  }
+  const campaignStats = Array.from(campaignMap.values()).sort((a, b) => b.leads - a.leads);
 
   return (
     <div>
@@ -46,6 +81,47 @@ export default async function AdminDashboardPage() {
         />
         <StatCard label="Citas agendadas" value={String(totalBookings)} />
         <StatCard label="Citas próximas" value={String(upcomingBookings)} />
+      </div>
+
+      <h2 className="text-lg font-semibold mb-3">Rendimiento por campaña</h2>
+      <p className="text-xs text-white/40 mb-3">
+        Cada link que compartes con un <code>?utm_campaign=nombre</code> distinto
+        se mide por separado aquí, aunque corran al mismo tiempo.
+      </p>
+      <div className="overflow-x-auto rounded-2xl border border-white/10 mb-10">
+        <table className="w-full text-sm">
+          <thead className="bg-white/5 text-white/50 text-left">
+            <tr>
+              <th className="px-4 py-3 font-medium">Campaña</th>
+              <th className="px-4 py-3 font-medium">Origen</th>
+              <th className="px-4 py-3 font-medium">Leads</th>
+              <th className="px-4 py-3 font-medium">Verificados</th>
+              <th className="px-4 py-3 font-medium">Citas agendadas</th>
+              <th className="px-4 py-3 font-medium">Conversión</th>
+            </tr>
+          </thead>
+          <tbody>
+            {campaignStats.map((c) => (
+              <tr key={c.campaign} className="border-t border-white/5">
+                <td className="px-4 py-3 font-medium">{c.campaign}</td>
+                <td className="px-4 py-3 text-white/60">{c.source}</td>
+                <td className="px-4 py-3 text-white/60">{c.leads}</td>
+                <td className="px-4 py-3 text-white/60">{c.verified}</td>
+                <td className="px-4 py-3 text-white/60">{c.bookings}</td>
+                <td className="px-4 py-3 text-white/60">
+                  {c.leads > 0 ? Math.round((c.bookings / c.leads) * 100) : 0}%
+                </td>
+              </tr>
+            ))}
+            {campaignStats.length === 0 && (
+              <tr>
+                <td colSpan={6} className="px-4 py-6 text-center text-white/40">
+                  Aún no hay leads con campañas registradas.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
 
       <h2 className="text-lg font-semibold mb-3">Últimos leads</h2>

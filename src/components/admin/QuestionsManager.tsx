@@ -122,8 +122,19 @@ function QuestionForm({
       {draft.type !== "TEXT" && (
         <div className="space-y-2">
           <p className="text-xs text-white/50">
-            Opciones (el puntaje suma al perfil del lead)
+            Opciones — el <strong className="text-white/70">puntaje</strong> de
+            cada una se suma al perfil del lead cuando la elige (esto es
+            distinto de la ⭐ de los testimonios, que es solo decorativa).
           </p>
+          <div className="flex items-center gap-2 px-0.5">
+            <span className="flex-1 text-[11px] uppercase tracking-wide text-white/30">
+              Opción
+            </span>
+            <span className="w-16 text-center text-[11px] uppercase tracking-wide text-white/30">
+              Puntaje
+            </span>
+            <span className="w-5" />
+          </div>
           {draft.options.map((opt, i) => (
             <div key={i} className="flex items-center gap-2">
               <input
@@ -139,12 +150,13 @@ function QuestionForm({
               <input
                 type="number"
                 value={opt.score}
+                title="Puntaje que suma esta opción al perfil del lead"
                 onChange={(e) => {
                   const options = [...draft.options];
                   options[i] = { ...options[i], score: Number(e.target.value) };
                   onChange({ ...draft, options });
                 }}
-                className="w-16 rounded-lg border border-white/15 bg-white/5 px-2 py-1.5 text-sm text-white"
+                className="w-16 rounded-lg border border-white/15 bg-white/5 px-2 py-1.5 text-sm text-white text-center"
               />
               <button
                 onClick={() =>
@@ -153,7 +165,7 @@ function QuestionForm({
                     options: draft.options.filter((_, idx) => idx !== i),
                   })
                 }
-                className="text-white/40 hover:text-rose-400 text-sm px-1"
+                className="w-5 text-white/40 hover:text-rose-400 text-sm"
               >
                 ✕
               </button>
@@ -289,7 +301,9 @@ export default function QuestionsManager({
               </p>
               {q.options && q.options.length > 0 && (
                 <p className="mt-1 text-xs text-white/40 truncate">
-                  {q.options.map((o) => o.label).join(" · ")}
+                  {q.options
+                    .map((o) => `${o.label} (${o.score} pts)`)
+                    .join(" · ")}
                 </p>
               )}
             </div>

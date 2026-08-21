@@ -69,7 +69,7 @@ export async function submitLead(
         utmTerm: data.utmTerm || undefined,
         utmId: data.utmId || undefined,
         referrer: data.referrer || undefined,
-        landingPath: "/",
+        landingPath: data.landingPath || "/",
         answers: {
           create: data.answers
             .filter((a) => questions.some((q) => q.id === a.questionId))

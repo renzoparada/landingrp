@@ -1,17 +1,38 @@
 import { prisma } from "@/lib/prisma";
+import { getBaseUrl } from "@/lib/url";
 import CancelBookingButton from "@/components/admin/CancelBookingButton";
+import CopyLinkBox from "@/components/admin/CopyLinkBox";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminBookingsPage() {
-  const bookings = await prisma.booking.findMany({
-    orderBy: [{ date: "asc" }, { startTime: "asc" }],
-    include: { lead: true },
-  });
+  const [bookings, baseUrl] = await Promise.all([
+    prisma.booking.findMany({
+      orderBy: [{ date: "asc" }, { startTime: "asc" }],
+      include: { lead: true },
+    }),
+    getBaseUrl(),
+  ]);
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">Reservas</h1>
+      <h1 className="text-2xl font-bold mb-2">Reservas</h1>
+
+      <div className="mb-8 rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
+        <h2 className="text-sm font-semibold text-white/80">
+          Link directo para agendar (sin quiz)
+        </h2>
+        <p className="mt-1 text-sm text-white/50">
+          Compártelo cuando quieras que alguien agende directamente, sin pasar
+          por el quiz ni la oferta. Igual pide sus datos de contacto antes de
+          mostrarle el calendario, así queda registrado en tus Leads como
+          cualquier otro.
+        </p>
+        <div className="mt-3">
+          <CopyLinkBox link={`${baseUrl}/agendar`} />
+        </div>
+      </div>
+
       <div className="overflow-x-auto rounded-2xl border border-white/10">
         <table className="w-full text-sm">
           <thead className="bg-white/5 text-white/50 text-left">

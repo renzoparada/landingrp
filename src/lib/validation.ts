@@ -18,6 +18,8 @@ export const leadSubmitSchema = z.object({
   city: z.string().trim().min(2, "Ingresa tu ciudad"),
   country: z.string().trim().min(2, "Selecciona tu país"),
   answers: z.array(quizAnswerSchema).default([]),
+  // "/" for the quiz funnel, "/agendar" for the direct-booking shortcut link.
+  landingPath: z.string().optional(),
   utmSource: z.string().optional().nullable(),
   utmMedium: z.string().optional().nullable(),
   utmCampaign: z.string().optional().nullable(),
